@@ -28,7 +28,10 @@ public class Server {
         handlers.computeIfAbsent(method, k -> new ConcurrentHashMap<>()).put(path, handler);
     }
 
-    private Handler findHandler(String method, String path) {
+    private Handler findHandler(String method, String fullPath) {
+        // Извлекаем путь без query-параметров
+        String path = fullPath.split("\\?")[0];
+
         Map<String, Handler> methodHandlers = handlers.get(method);
         if (methodHandlers == null) {
             return null;
@@ -58,7 +61,7 @@ public class Server {
                 return;
             }
             final var method = parts[0];
-            final var path = parts[1];
+            final var fullpath = parts[1];
 
             Map<String, String> headers = new HashMap<>();
             String line;
@@ -79,13 +82,13 @@ public class Server {
                 }
             }
 
-            Request request = new Request(method, headers, body);
+            Request request = new Request(method, fullpath, headers, body);
 
-            Handler handler = findHandler(method, path);
+            Handler handler = findHandler(method, fullpath);
             if (handler != null) {
                 handler.handle(request, out);
             }else{
-                defaultHandler(path, out);
+                defaultHandler(fullpath, out);
             }
 
 
